@@ -1,5 +1,9 @@
 import { FFmpeg } from '@ffmpeg/ffmpeg'
 import { VIDEO_CONFIG } from '@/utils/constants'
+import {
+  getFFmpegCoreSources,
+  releaseFFmpegCoreObjectURLs,
+} from '@/utils/ffmpegCoreUrls'
 
 export interface CompressionProgress {
   phase:
@@ -75,12 +79,11 @@ class VideoCompressionService {
         message: 'Loading compression engine...',
       })
 
-      // Load core from CDN; SW will cache these cross-origin requests in a persistent cache
-      const baseURL =
-        'https://cdn.jsdelivr.net/npm/@ffmpeg/core@0.12.10/dist/umd'
+      const { coreURL, wasmURL } = await getFFmpegCoreSources()
+
       await this.ffmpeg.load({
-        coreURL: `${baseURL}/ffmpeg-core.js`,
-        wasmURL: `${baseURL}/ffmpeg-core.wasm`,
+        coreURL,
+        wasmURL,
       })
 
       this.isLoaded = true
@@ -285,6 +288,8 @@ class VideoCompressionService {
       this.isLoaded = false
       this.loadingPromise = null
     }
+
+    releaseFFmpegCoreObjectURLs()
   }
 }
 

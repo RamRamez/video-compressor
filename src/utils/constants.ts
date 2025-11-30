@@ -1,5 +1,5 @@
 /**
- * Video compression constants (copied from TreeGens app)
+ * Video compression constants
  */
 
 export const VIDEO_CONFIG = {
