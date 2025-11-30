@@ -1,36 +1,71 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+## Video Compressor (Next.js + WebAssembly FFmpeg)
 
-## Getting Started
+A browser-based video compressor that leverages [`@ffmpeg/ffmpeg`](https://github.com/ffmpegwasm/ffmpeg.wasm) (WASM build) to process videos entirely on the client. No files ever leave the user's machine, making it ideal for privacy-first workflows and offline usage.
 
-First, run the development server:
+### Key Features
+- Client-side compression powered by FFmpeg WebAssembly.
+- Configurable presets (`src/utils/constants.ts`) controlling resolution, bitrate, frame rate, and size thresholds.
+- Progressive status updates surfaced via `CompressionProgress`.
+- Service Worker (`src/components/ServiceWorkerRegister.tsx` + `public/sw.js`) caches FFmpeg assets for repeat visits and offline usage.
+- Next.js App Router UI with drag-and-drop uploader and detailed compression summary (`src/app/page.tsx`).
 
+## Requirements
+- Node.js 18+ (Node 20+ recommended)
+- npm (bundled with Node) or another package manager
+
+## Installation
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/RamRamez/video-compressor.git
+cd video-compressor
+npm install
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Common Scripts
+```bash
+# Launch dev server at http://localhost:3000
+npm run dev
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+# Production build + start
+npm run build
+npm run start
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+# Type-check and lint
+npm run lint
+```
 
-## Learn More
+## Usage Guide
+1. Run `npm run dev`.
+2. Visit `http://localhost:3000`.
+3. Drop or select an MP4 (other containers are converted to MP4 internally).
+4. Track the progress bar phases (Initializing → Loading → Compressing → Finalizing → Complete).
+5. Download/save the generated file once the process completes.
 
-To learn more about Next.js, take a look at the following resources:
+All compression logic lives in `src/services/videoCompressionService.ts`. It loads FFmpeg lazily, writes the input file into the virtual FS, executes a command constructed by `buildCompressionCommand`, then streams the compressed output back into a `Blob`/`File`.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Configuration
+- `VIDEO_CONFIG.MAX_ALLOWED_SIZE_WITHOUT_COMPRESSION_MB`: bypasses compression for small files.
+- `VIDEO_CONFIG.COMPRESSION`: resolution, bitrate, CRF, etc.
+- `VIDEO_CONFIG.MAX_DURATION_SECONDS`, `MAX_COMPRESSED_SIZE_MB`: used to estimate bitrate budgets.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Adjust these constants in `src/utils/constants.ts` and, if you need per-session overrides, use the helper in `src/utils/videoConfigManager.ts`.
 
-## Deploy on Vercel
+## Service Worker & Caching
+FFmpeg core files are fetched from `cdn.jsdelivr.net`. The service worker caches them so future sessions can initialize instantly. If you change the FFmpeg version or core URL, bump the cache version inside `public/sw.js` to invalidate old assets.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Troubleshooting
+- **Type errors during build**: run `./node_modules/.bin/tsc --noEmit` to see full diagnostics.
+- **FFmpeg load hangs**: confirm the browser allows WASM and that the CDN is reachable (service worker must be updated if URLs change).
+- **Large files still huge**: lower `VIDEO_CONFIG.COMPRESSION.CRF` or reduce `MAX_WIDTH/MAX_HEIGHT`.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Project Structure
+```
+src/
+  app/................ Next.js UI (App Router)
+  components/......... Service worker registration helper
+  services/........... Compression orchestration (FFmpeg)
+  utils/.............. Shared config + helpers
+public/............... Static assets + service worker
+```
+
+## License
+MIT © Giveth
