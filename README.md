@@ -6,7 +6,7 @@ A browser-based video compressor that leverages [`@ffmpeg/ffmpeg`](https://githu
 - Client-side compression powered by FFmpeg WebAssembly.
 - Configurable presets (`src/utils/constants.ts`) controlling resolution, bitrate, frame rate, and size thresholds.
 - Progressive status updates surfaced via `CompressionProgress`.
-- Service Worker (`src/components/ServiceWorkerRegister.tsx` + `public/sw.js`) caches FFmpeg assets for repeat visits and offline usage.
+- FFmpeg core binaries cached directly in the browser (Cache Storage + Blob URLs) via `src/utils/ffmpegCoreUrls.ts`, eliminating the need for a service worker.
 - Next.js App Router UI with drag-and-drop uploader and detailed compression summary (`src/app/page.tsx`).
 
 ## Requirements
@@ -49,8 +49,8 @@ All compression logic lives in `src/services/videoCompressionService.ts`. It loa
 
 Adjust these constants in `src/utils/constants.ts` and, if you need per-session overrides, use the helper in `src/utils/videoConfigManager.ts`.
 
-## Service Worker & Caching
-FFmpeg core files are fetched from `cdn.jsdelivr.net`. The service worker caches them so future sessions can initialize instantly. If you change the FFmpeg version or core URL, bump the cache version inside `public/sw.js` to invalidate old assets.
+## FFmpeg Asset Caching (No Service Worker)
+`src/utils/ffmpegCoreUrls.ts` warms Cache Storage with the FFmpeg core JS/WASM assets, then serves them to `@ffmpeg/ffmpeg` through Blob URLs. The files stay in the browser cache between sessions without requiring a service worker. If you bump the FFmpeg version or change the CDN path, just update `FF_CORE_URLS` and the helper will refresh the stored blobs automatically.
 
 ## Troubleshooting
 - **Type errors during build**: run `./node_modules/.bin/tsc --noEmit` to see full diagnostics.
@@ -61,11 +61,11 @@ FFmpeg core files are fetched from `cdn.jsdelivr.net`. The service worker caches
 ```
 src/
   app/................ Next.js UI (App Router)
-  components/......... Service worker registration helper
+  components/......... UI helpers and shared components
   services/........... Compression orchestration (FFmpeg)
-  utils/.............. Shared config + helpers
-public/............... Static assets + service worker
+  utils/.............. Shared config + FFmpeg core caching helpers
+public/............... Static assets and manifest
 ```
 
 ## License
-MIT © Giveth
+MIT © Ramin

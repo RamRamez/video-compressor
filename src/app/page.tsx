@@ -22,7 +22,7 @@ const defaultSettings = getDefaultCompressionSettings()
 const resolutionPresets = [
   {
     id: 'default',
-    label: 'TreeGens default',
+    label: 'default',
     description: 'Balanced square ratio (1280x1280)',
     width: defaultSettings.maxWidth,
     height: defaultSettings.maxHeight,
@@ -57,6 +57,30 @@ const formatBytes = (bytes?: number) => {
   const idx = Math.floor(Math.log(bytes) / Math.log(1024))
   const value = bytes / Math.pow(1024, idx)
   return `${value.toFixed(value > 10 ? 0 : 1)} ${units[idx]}`
+}
+
+const formatDuration = (seconds?: number) => {
+  if (!seconds && seconds !== 0) return '–'
+
+  if (seconds < 60) {
+    const value = Math.round(seconds)
+    return `${value} ${value === 1 ? 'second' : 'seconds'}`
+  }
+
+  const toDisplayString = (value: number) =>
+    value >= 10
+      ? Math.round(value).toString()
+      : value.toFixed(1).replace(/\.0$/, '')
+
+  if (seconds < 3600) {
+    const minutes = Math.floor(seconds / 60)
+    const display = toDisplayString(minutes)
+    return `${display} ${minutes === 1 ? 'minute' : 'minutes'}`
+  }
+
+  const hours = Math.floor(seconds / 3600)
+  const display = toDisplayString(hours)
+  return `${display} ${hours === 1 ? 'hour' : 'hours'}`
 }
 
 const crfLabel = (crf: number) => {
@@ -341,7 +365,7 @@ export default function Home() {
             <div>
               <p className="text-sm text-slate-400">Estimated time</p>
               <p className="text-2xl font-semibold text-white">
-                {selectedFile ? `${estimatedSeconds}s` : '–'}
+                {selectedFile ? formatDuration(estimatedSeconds) : '–'}
               </p>
               <p className="text-xs text-slate-500">Based on file size</p>
             </div>
@@ -476,8 +500,8 @@ export default function Home() {
 
             <p className="mt-2 text-sm text-slate-400">
               <span className="block">
-                Stick with the default TreeGens tuning or enable custom settings{' '}
-                to override resolution, bitrate, and CRF.
+                Stick with the default tuning or enable custom settings to
+                override resolution, bitrate, and CRF.
               </span>
               <span className="block">
                 The underlying logic stays identical to the production app.
