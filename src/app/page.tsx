@@ -53,10 +53,23 @@ const resolutionPresets = [
 const formatBytes = (bytes?: number) => {
   if (!bytes && bytes !== 0) return '–'
   if (bytes === 0) return '0 B'
-  const units = ['B', 'KB', 'MB', 'GB']
-  const idx = Math.floor(Math.log(bytes) / Math.log(1024))
-  const value = bytes / Math.pow(1024, idx)
-  return `${value.toFixed(value > 10 ? 0 : 1)} ${units[idx]}`
+
+  const units = ['B', 'KB', 'MB', 'GB', 'TB']
+  let value = bytes
+  let idx = 0
+
+  while (value >= 1000 && idx < units.length - 1) {
+    value /= 1000
+    idx += 1
+  }
+
+  const decimals = value >= 100 ? 0 : value >= 10 ? 1 : 2
+  const rounded =
+    decimals === 0
+      ? Math.round(value).toString()
+      : Number(value.toFixed(decimals)).toString()
+
+  return `${rounded} ${units[idx]}`
 }
 
 const formatDuration = (seconds?: number) => {
@@ -361,7 +374,7 @@ export default function Home() {
             </div>
           )}
 
-          <div className="grid gap-4 rounded-3xl border border-white/5 bg-white/5 p-6 md:grid-cols-3">
+          <div className="grid gap-4 rounded-3xl border border-white/5 bg-white/5 p-6 md:grid-cols-4">
             <div>
               <p className="text-sm text-slate-400">Estimated time</p>
               <p className="text-2xl font-semibold text-white">
@@ -380,6 +393,13 @@ export default function Home() {
               <p className="text-2xl font-semibold text-white">
                 {summary ? formatBytes(summary.compressedSize) : '–'}
               </p>
+            </div>
+            <div>
+              <p className="text-sm text-slate-400">Compression ratio</p>
+              <p className="text-2xl font-semibold text-white">
+                {summary ? `${summary.ratio.toFixed(2)}×` : '–'}
+              </p>
+              <p className="text-xs text-slate-500">Original / Compressed</p>
             </div>
           </div>
 
