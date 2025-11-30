@@ -10,10 +10,9 @@ export const ServiceWorkerRegister = () => {
 
     const register = async () => {
       try {
-        const registration = await navigator.serviceWorker.register('/sw.js', {
+        await navigator.serviceWorker.register('/sw.js', {
           scope: '/',
         })
-        console.info('[SW] registered', registration.scope)
       } catch (error) {
         console.warn('[SW] registration failed', error)
       }

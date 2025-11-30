@@ -1,5 +1,5 @@
-import { VIDEO_CONFIG } from '@/utils/constants'
 import { FFmpeg } from '@ffmpeg/ffmpeg'
+import { VIDEO_CONFIG } from '@/utils/constants'
 
 export interface CompressionProgress {
   phase:
@@ -57,7 +57,7 @@ class VideoCompressionService {
       this.ffmpeg = new FFmpeg()
 
       this.ffmpeg.on('log', ({ message }) => {
-        console.log('FFmpeg:', message)
+        console.warn('[FFmpeg]', message)
       })
 
       this.ffmpeg.on('progress', ({ progress, time }) => {
@@ -164,7 +164,17 @@ class VideoCompressionService {
       await this.ffmpeg.deleteFile(inputFileName)
       await this.ffmpeg.deleteFile(outputFileName)
 
-      const compressedBlob = new Blob([compressedData], { type: 'video/mp4' })
+      const buffer = compressedData.buffer
+      if (!(buffer instanceof ArrayBuffer)) {
+        throw new Error('Unsupported buffer type returned from compression')
+      }
+
+      const payload = buffer.slice(
+        compressedData.byteOffset,
+        compressedData.byteOffset + compressedData.byteLength,
+      )
+
+      const compressedBlob = new Blob([payload], { type: 'video/mp4' })
       const compressedFile = new File([compressedBlob], file.name, {
         type: 'video/mp4',
         lastModified: Date.now(),
@@ -257,7 +267,7 @@ class VideoCompressionService {
       outputFile,
     ]
 
-    console.log('FFmpeg compression command:', args.join(' '))
+    console.warn('FFmpeg compression command:', args.join(' '))
     return args
   }
 
